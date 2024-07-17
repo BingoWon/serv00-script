@@ -21,7 +21,7 @@ for server in servers:
     username = server['username']
     password = server['password']
 
-    print(f"连接到Bin {host}...")
+    print(f"连接到 {host}...")
 
     # 执行恢复命令（这里假设使用 SSH 连接和密码认证）
     restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
@@ -39,7 +39,6 @@ telegram_payload = {
     # "reply_markup": '{}'
 }
 
-print(telegram_payload)
 # 打印请求的详细信息
 print(f"Telegram 请求 URL: {telegram_url}")
 print(f"Telegram 请求 Payload: {telegram_payload}")
