@@ -27,8 +27,8 @@ for server in servers:
     restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
     try:
         output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT)
-        # summary_message += f"\n成功恢复 {host} 上的 vless 服务：\n{output.decode('utf-8')}"
-        summary_message += f"\n成功恢复 {host} 上的 vless 服务"
+        summary_message += f"\n成功恢复 {host} 上的 vless 服务：\n{output.decode('utf-8')}"
+        # summary_message += f"\n成功恢复 {host} 上的 vless 服务"
     except subprocess.CalledProcessError as e:
         summary_message += f"\n无法恢复 {host} 上的 vless 服务：\n{e.output.decode('utf-8')}"
 
