@@ -39,6 +39,7 @@ telegram_payload = {
     # "reply_markup": '{}'
 }
 
+print(telegram_payload)
 # 打印请求的详细信息
 print(f"Telegram 请求 URL: {telegram_url}")
 print(f"Telegram 请求 Payload: {telegram_payload}")
