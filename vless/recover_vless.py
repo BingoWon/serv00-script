@@ -36,7 +36,7 @@ telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
 telegram_payload = {
     "chat_id": telegram_chat_id,
     "text": summary_message,
-    "reply_markup": '{"inline_keyboard":[[{"text":"问题反馈❓","url":"https://t.me/yxjsjl"}]]}'
+    "reply_markup": '{}'
 }
 
 # 打印请求的详细信息
