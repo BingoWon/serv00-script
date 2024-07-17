@@ -4,7 +4,9 @@ on:
   schedule:
     - cron: '*/20 * * * *'  # 每20分钟执行一次
   workflow_dispatch:
-
+  push:
+    branches:
+      - main
 jobs:
   restore_and_notify:
     runs-on: ubuntu-latest
