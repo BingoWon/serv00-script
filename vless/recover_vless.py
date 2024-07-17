@@ -21,7 +21,7 @@ for server in servers:
     username = server['username']
     password = server['password']
 
-    print(f"连接到 {host}...")
+    print(f"连接到Bin {host}...")
 
     # 执行恢复命令（这里假设使用 SSH 连接和密码认证）
     restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
