@@ -14,6 +14,9 @@ servers = json.loads(accounts_json)
 # 初始化汇总消息
 summary_message = "serv00-vless 恢复操作结果：\n"
 
+# 获取当前脚本所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 # 遍历服务器列表并执行恢复操作
 for server in servers:
     host = server['host']
@@ -23,12 +26,21 @@ for server in servers:
 
     print(f"连接到 {host}...")
 
-    # 执行恢复命令（这里假设使用 SSH 连接和密码认证）
+    # 上传新的check_vless.sh文件
+    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no {os.path.join(current_dir, 'check_vless.sh')} {username}@{host}:~/domains/bingow.serv00.net/vless/check_vless.sh"
+    try:
+        subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
+        print(f"成功上传 check_vless.sh 到 {host}")
+    except subprocess.CalledProcessError as e:
+        print(f"无法上传 check_vless.sh 到 {host}：{e.output.decode('utf-8')}")
+        summary_message += f"\n无法上传 check_vless.sh 到 {host}：\n{e.output.decode('utf-8')}"
+        continue
+
+    # 执行恢复命令
     restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
     try:
         output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT)
         summary_message += f"\n成功恢复 {host} 上的 vless 服务：\n{output.decode('utf-8')}"
-        # summary_message += f"\n成功恢复 {host} 上的 vless 服务"
     except subprocess.CalledProcessError as e:
         summary_message += f"\n无法恢复 {host} 上的 vless 服务：\n{e.output.decode('utf-8')}"
 
@@ -37,7 +49,6 @@ telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
 telegram_payload = {
     "chat_id": telegram_chat_id,
     "text": summary_message,
-    # "reply_markup": '{}'
 }
 
 # 打印请求的详细信息
