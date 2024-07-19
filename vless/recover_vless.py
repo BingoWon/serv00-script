@@ -18,7 +18,7 @@ summary_message = "VLESS Service Status and Public IP Report:\n"
 def get_public_ip(username, password, host, port):
     command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'curl -s ifconfig.me'"
     try:
-        ip = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).strip().decode('utf-8')
+        ip = subprocess.check_output(command, shell=True, stderr=subprocess.DEVNULL).strip().decode('utf-8')
         return ip
     except subprocess.CalledProcessError as e:
         return f"Failed to get public IP for {host}: {e.output.decode('utf-8')}"
@@ -27,7 +27,6 @@ def get_public_ip(username, password, host, port):
 def check_and_recover_vless(username, password, host, port):
     # Ensure the local check_vless.sh file exists
     local_script_path = os.path.join(os.path.dirname(__file__), 'check_vless.sh')
-    print(f"{local_script_path=}")
     if not os.path.exists(local_script_path):
         return f"Local script check_vless.sh does not exist at {local_script_path}"
 
@@ -60,7 +59,10 @@ for server in servers:
 
     # Get current public IP address
     current_ip = get_public_ip(username, password, host, port)
-    ip_messages += f"\nCurrent public IP address of {host}: {current_ip}"
+    if current_ip.startswith("Failed"):
+        ip_messages += f"\n{current_ip}"
+    else:
+        ip_messages += f"\nCurrent public IP address of {host}: {current_ip}"
 
 # Append the IP messages to the summary
 summary_message += ip_messages
