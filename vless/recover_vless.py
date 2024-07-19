@@ -3,6 +3,8 @@ import json
 import subprocess
 import requests
 
+# Always use `stderr=subprocess.DEVNULL` instead of `stderr=subprocess.STDOUT` to prevent verbose info in cmd outputs.
+
 # Load secrets from environment variables
 accounts_json = os.getenv('ACCOUNTS_JSON')
 telegram_token = os.getenv('TELEGRAM_TOKEN')
@@ -33,14 +35,14 @@ def check_and_recover_vless(username, password, host, port):
     # Upload new check_vless.sh file
     scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local_script_path} {username}@{host}:~/domains/{username}.serv00.net/vless/check_vless.sh"
     try:
-        subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
+        subprocess.check_output(scp_command, shell=True, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as e:
         return f"Failed to upload check_vless.sh to {host}:\n{e.output.decode('utf-8')}"
 
     # Execute recovery command
     restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/{username}.serv00.net/vless && ./check_vless.sh'"
     try:
-        output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+        output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.DEVNULL).decode('utf-8')
         return f"Successfully recovered VLESS service on {host}:\n{output}"
     except subprocess.CalledProcessError as e:
         return f"Failed to recover VLESS service on {host}:\n{e.output.decode('utf-8')}"

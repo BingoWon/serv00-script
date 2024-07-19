@@ -136,9 +136,9 @@ main() {
         if [[ -f config.json ]]; then
             uuid=$(jq -r '.uuid' config.json)
             port=$(jq -r '.port' config.json)
-            echo -e "UUID: ${uuid}"
-            echo -e "Port: ${port}"
-            echo -e "域名: $USER.serv00.net"
+            # echo -e "UUID: ${uuid}"
+            # echo -e "Port: ${port}"
+            # echo -e "域名: $USER.serv00.net"
             echo -e "VLESS节点信息: vless://${uuid}@$USER.serv00.net:${port}?flow=&security=none&encryption=none&type=ws&host=$USER.serv00.net&path=/&sni=&fp=&pbk=&sid=#$USER.serv00.vless"
 
         else
