@@ -1,48 +1,44 @@
-name: 恢复vless服务并发送Telegram消息
+name: Update IP Records and Recover VLESS Service
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '*/20 * * * *'  # 每20分钟执行一次
   workflow_dispatch:
 
 jobs:
-  restore_and_notify:
+  update_and_recover:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure the full repository is checked out
+          fetch-depth: 0
 
-      - name: 设置Python环境
-        uses: actions/setup-python@v4
+      - name: Set up Python
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.x'  # Specify the required Python version
+          python-version: '3.x'
 
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: pip install requests
 
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests  # Install the necessary dependencies
-
-      - name: Print vless/recover_vless.py for Debugging
-        run: cat vless/recover_vless.py  # Print the script contents
-
-      - name: 执行Python脚本恢复vless服务并发送Telegram消息
+      - name: Run recovery script
         env:
           ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python3 script.py
+
+      - name: Configure git
         run: |
-          python3 vless/recover_vless.py  # Run your Python script
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Commit IP records
+        run: |
+          git add ip_records.json
+          git commit -m "Update IP records"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -17,6 +17,26 @@ summary_message = "serv00-vless 恢复操作结果：\n"
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+# IP 地址存储文件路径
+ip_record_file = os.path.join(current_dir, 'ip_records.json')
+
+# 加载上次记录的 IP 地址
+if os.path.exists(ip_record_file):
+    with open(ip_record_file, 'r') as f:
+        ip_records = json.load(f)
+else:
+    ip_records = {}
+
+# Function to get the public IP address of a server
+def get_public_ip(username, password, host, port):
+    command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'curl -s ifconfig.me'"
+    try:
+        ip = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).strip().decode('utf-8')
+        return ip
+    except subprocess.CalledProcessError as e:
+        print(f"无法获取 {host} 的公共 IP：{e.output.decode('utf-8')}")
+        return None
+
 # 遍历服务器列表并执行恢复操作
 for server in servers:
     host = server['host']
@@ -26,7 +46,21 @@ for server in servers:
 
     print(f"连接到 {host}...")
 
-    # 上传新的check_vless.sh文件
+    # 获取当前公共 IP 地址
+    current_ip = get_public_ip(username, password, host, port)
+    if current_ip:
+        print(f"{host} 的当前公共 IP 地址是 {current_ip}")
+
+        # 检查 IP 地址是否已更改
+        last_known_ip = ip_records.get(host)
+        if last_known_ip and last_known_ip != current_ip:
+            summary_message += f"\n{host} 的公共 IP 地址已更改：{last_known_ip} -> {current_ip}"
+        ip_records[host] = current_ip
+    else:
+        summary_message += f"\n无法获取 {host} 的当前公共 IP 地址。"
+        continue
+
+    # 上传新的 check_vless.sh 文件
     scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no {os.path.join(current_dir, 'check_vless.sh')} {username}@{host}:~/domains/bingow.serv00.net/vless/check_vless.sh"
     try:
         subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
@@ -43,6 +77,10 @@ for server in servers:
         summary_message += f"\n成功恢复 {host} 上的 vless 服务：\n{output.decode('utf-8')}"
     except subprocess.CalledProcessError as e:
         summary_message += f"\n无法恢复 {host} 上的 vless 服务：\n{e.output.decode('utf-8')}"
+
+# 保存当前 IP 地址到记录文件
+with open(ip_record_file, 'w') as f:
+    json.dump(ip_records, f)
 
 # 发送汇总消息到 Telegram
 telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
