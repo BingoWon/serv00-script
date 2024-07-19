@@ -27,7 +27,9 @@ def get_public_ip(username, password, host, port):
 # Function to check and recover VLESS service
 def check_and_recover_vless(username, password, host, port):
     # Upload new check_vless.sh file
-    local_script_path = os.path.join(os.getcwd(), 'check_vless.sh')
+    # 获取当前脚本所在目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    local_script_path = os.path.join(current_dir, 'check_vless.sh')
     print(f"{local_script_path=}")
     scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local_script_path} {username}@{host}:~/domains/$USER.serv00.net/vless/check_vless.sh 2>/dev/null"
     try:
