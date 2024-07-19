@@ -3,63 +3,86 @@ import json
 import subprocess
 import requests
 
-# 从环境变量中获取密钥
+# Load secrets from environment variables
 accounts_json = os.getenv('ACCOUNTS_JSON')
 telegram_token = os.getenv('TELEGRAM_TOKEN')
 telegram_chat_id = os.getenv('TELEGRAM_CHAT_ID')
 
-# 解析 JSON 字符串
+# Parse JSON string
 servers = json.loads(accounts_json)
 
-# 初始化汇总消息
-summary_message = "serv00-vless 当前公共 IP 地址：\n"
+# Initialize summary message
+summary_message = "VLESS Service Status and Public IP Report:\n"
 
 # Function to get the public IP address of a server
 def get_public_ip(username, password, host, port):
-    command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -p {port} {username}@{host} 'curl -s ifconfig.me'"
+    command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'curl -s ifconfig.me'"
     try:
         ip = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).strip().decode('utf-8')
         return ip
     except subprocess.CalledProcessError as e:
-        print(f"无法获取 {host} 的公共 IP：{e.output.decode('utf-8')}")
+        print(f"Failed to get public IP for {host}: {e.output.decode('utf-8')}")
         return None
 
-# 遍历服务器列表并获取公共 IP 地址
+# Function to check and recover VLESS service
+def check_and_recover_vless(username, password, host, port):
+    # Upload new check_vless.sh file
+    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null check_vless.sh {username}@{host}:~/domains/$USER.serv00.net/vless/check_vless.sh"
+    try:
+        subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
+        print(f"Successfully uploaded check_vless.sh to {host}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to upload check_vless.sh to {host}: {e.output.decode('utf-8')}")
+        return f"\nFailed to upload check_vless.sh to {host}:\n{e.output.decode('utf-8')}"
+
+    # Execute recovery command
+    restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
+    try:
+        output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT)
+        return f"\nSuccessfully recovered VLESS service on {host}:\n{output.decode('utf-8')}"
+    except subprocess.CalledProcessError as e:
+        return f"\nFailed to recover VLESS service on {host}:\n{e.output.decode('utf-8')}"
+
+# Iterate over the server list and perform operations
 for server in servers:
     host = server['host']
     port = server['port']
     username = server['username']
     password = server['password']
 
-    print(f"连接到 {host}...")
+    print(f"Connecting to {host}...")
 
-    # 获取当前公共 IP 地址
+    # Get current public IP address
     current_ip = get_public_ip(username, password, host, port)
     if current_ip:
-        print(f"{host} 的当前公共 IP 地址是 {current_ip}")
-        summary_message += f"\n{host} 的当前公共 IP 地址是：{current_ip}"
+        print(f"Current public IP address of {host} is {current_ip}")
+        summary_message += f"\nCurrent public IP address of {host}: {current_ip}"
     else:
-        summary_message += f"\n无法获取 {host} 的当前公共 IP 地址。"
+        summary_message += f"\nFailed to get current public IP address of {host}."
 
-# 发送汇总消息到 Telegram
+    # Check and recover VLESS service
+    vless_message = check_and_recover_vless(username, password, host, port)
+    summary_message += vless_message
+
+# Send summary message to Telegram
 telegram_url = f"https://api.telegram.org/bot{telegram_token}/sendMessage"
 telegram_payload = {
     "chat_id": telegram_chat_id,
     "text": summary_message,
 }
 
-# 打印请求的详细信息
-print(f"Telegram 请求 URL: {telegram_url}")
-print(f"Telegram 请求 Payload: {telegram_payload}")
+# Print request details
+print(f"Telegram request URL: {telegram_url}")
+print(f"Telegram request payload: {telegram_payload}")
 
-# 发送请求到 Telegram
+# Send request to Telegram
 response = requests.post(telegram_url, json=telegram_payload)
 
-# 打印请求的状态码和返回内容
-print(f"Telegram 请求状态码：{response.status_code}")
-print(f"Telegram 请求返回内容：{response.text}")
+# Print response status and content
+print(f"Telegram request status code: {response.status_code}")
+print(f"Telegram request response content: {response.text}")
 
 if response.status_code != 200:
-    print("发送 Telegram 消息失败")
+    print("Failed to send Telegram message")
 else:
-    print("发送 Telegram 消息成功")
+    print("Telegram message sent successfully")
