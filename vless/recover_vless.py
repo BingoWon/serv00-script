@@ -62,6 +62,7 @@ for server in servers:
     else:
         summary_message += f"\nFailed to get current public IP address of {host}."
 
+    print('???')
     # Check and recover VLESS service
     vless_message = check_and_recover_vless(username, password, host, port)
     summary_message += vless_message
