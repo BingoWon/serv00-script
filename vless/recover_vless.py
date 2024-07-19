@@ -29,6 +29,7 @@ def check_and_recover_vless(username, password, host, port):
     # Ensure the local check_vless.sh file exists
     local_script_path = os.path.join(os.path.dirname(__file__), 'check_vless.sh')
     if not os.path.exists(local_script_path):
+        print(f"{local_script_path=}")
         return f"\nLocal script check_vless.sh does not exist at {local_script_path}"
 
     # Upload new check_vless.sh file
