@@ -26,12 +26,13 @@ def get_public_ip(username, password, host, port):
 
 # Function to check and recover VLESS service
 def check_and_recover_vless(username, password, host, port):
+    # Ensure the local check_vless.sh file exists
+    local_script_path = os.path.join(os.path.dirname(__file__), 'check_vless.sh')
+    if not os.path.exists(local_script_path):
+        return f"\nLocal script check_vless.sh does not exist at {local_script_path}"
+
     # Upload new check_vless.sh file
-    # 获取当前脚本所在目录
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    local_script_path = os.path.join(current_dir, 'check_vless.sh')
-    print(f"{local_script_path=}")
-    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local_script_path} {username}@{host}:~/domains/$USER.serv00.net/vless/check_vless.sh 2>/dev/null"
+    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local_script_path} {username}@{host}:~/domains/{username}.serv00.net/vless/check_vless.sh 2>/dev/null"
     try:
         subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
         print(f"Successfully uploaded check_vless.sh to {host}")
@@ -40,7 +41,7 @@ def check_and_recover_vless(username, password, host, port):
         return f"\nFailed to upload check_vless.sh to {host}:\n{e.output.decode('utf-8')}"
 
     # Execute recovery command
-    restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh 2>/dev/null'"
+    restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/{username}.serv00.net/vless && ./check_vless.sh 2>/dev/null'"
     try:
         output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT)
         return f"\nSuccessfully recovered VLESS service on {host}:\n{output.decode('utf-8')}"
@@ -64,7 +65,6 @@ for server in servers:
     else:
         summary_message += f"\nFailed to get current public IP address of {host}."
 
-    print('???')
     # Check and recover VLESS service
     vless_message = check_and_recover_vless(username, password, host, port)
     summary_message += vless_message
