@@ -1,6 +1,9 @@
 name: VLESS Service and IP Reporting
 
 on:
+  push:
+    branches:
+      - main  # Run on push to main branch
   schedule:
     - cron: '*/20 * * * *'  # Every 20 minutes for both IP reporting and VLESS service check
   workflow_dispatch:
@@ -38,13 +41,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests  # Install the necessary dependencies
 
-      - name: Print vless/monitor_vless.py for Debugging
-        run: cat vless/monitor_vless.py  # Print the script contents
-
       - name: Execute Python script to monitor VLESS service and report public IP
         env:
           ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          python3 vless/monitor_vless.py  # Run your Python script
+          python3 vless/check_vless.py  # Run your Python script
