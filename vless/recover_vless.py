@@ -16,7 +16,7 @@ summary_message = "VLESS Service Status and Public IP Report:\n"
 
 # Function to get the public IP address of a server
 def get_public_ip(username, password, host, port):
-    command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'curl -s ifconfig.me'"
+    command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'curl -s ifconfig.me 2>/dev/null'"
     try:
         ip = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT).strip().decode('utf-8')
         return ip
@@ -27,7 +27,9 @@ def get_public_ip(username, password, host, port):
 # Function to check and recover VLESS service
 def check_and_recover_vless(username, password, host, port):
     # Upload new check_vless.sh file
-    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null check_vless.sh {username}@{host}:~/domains/$USER.serv00.net/vless/check_vless.sh"
+    local_script_path = os.path.join(os.path.dirname(__file__), 'check_vless.sh')
+    print(f"{local_script_path=}")
+    scp_command = f"sshpass -p '{password}' scp -P {port} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null {local_script_path} {username}@{host}:~/domains/$USER.serv00.net/vless/check_vless.sh 2>/dev/null"
     try:
         subprocess.check_output(scp_command, shell=True, stderr=subprocess.STDOUT)
         print(f"Successfully uploaded check_vless.sh to {host}")
@@ -36,7 +38,7 @@ def check_and_recover_vless(username, password, host, port):
         return f"\nFailed to upload check_vless.sh to {host}:\n{e.output.decode('utf-8')}"
 
     # Execute recovery command
-    restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh'"
+    restore_command = f"sshpass -p '{password}' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p {port} {username}@{host} 'cd ~/domains/$USER.serv00.net/vless && ./check_vless.sh 2>/dev/null'"
     try:
         output = subprocess.check_output(restore_command, shell=True, stderr=subprocess.STDOUT)
         return f"\nSuccessfully recovered VLESS service on {host}:\n{output.decode('utf-8')}"
